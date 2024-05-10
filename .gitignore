@@ -1,0 +1,5 @@
+/tmp/
+/dist/
+/views/**/*.go
+tailwindcss
+tailwind.config.js

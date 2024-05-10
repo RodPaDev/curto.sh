@@ -1,0 +1,165 @@
+{{ block "index" . }}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <script
+            src="https://unpkg.com/htmx.org@1.9.12"
+            integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2"
+            crossorigin="anonymous"
+        ></script>
+        <title>{{ .Title }}</title>
+        <link rel="stylesheet" href="/css/index.css" />
+        <link rel="icon" type="image/svg+xml" href="/assets/favicon/favicon.svg">
+        <link rel="icon" type="image/png" href="/assets/favicon/favicon.png">
+        <script>
+             function validateForm (event) {
+                const form = event.target;
+                const url = form.querySelector('#url');
+                const error = form.querySelector('#error');
+                // this a long boi
+                const urlPattern = new RegExp('(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})');
+                
+                if (!url.value || !urlPattern.test(url.value)) {
+                    event.preventDefault();
+                    error.textContent = 'Please enter a valid URL';
+                    error.classList.remove('opacity-0');
+                    error.classList.add('opacity-100');
+                }
+            }
+
+            function resetError () {
+                const error = document.querySelector('#error');
+                error.classList.remove('opacity-100');
+                error.classList.add('opacity-0');
+            }
+        </script>
+        <script defer >
+            document.addEventListener('DOMContentLoaded', function() {
+                document.body.addEventListener('htmx:beforeSwap', function(event) {
+                    if (event.detail.xhr.status === 422) {
+                        event.detail.shouldSwap = true;
+                        event.detail.isError = false;
+                    }
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <main class="h-screen flex flex-col items-center">
+            <header class="flex items-center justify-center gap-10 pt-32">
+                <a href="/surprise" class="hover:underline underline-offset-4">
+                    <h1 class="text-4xl">{{ .Title }}</h1>
+                </a>
+            </header>
+            <div id="content" class="flex flex-col flex-grow justify-center w-[650px] mb-[33%] view-transition-slide-it">
+                {{ if .NotFound }}
+                    {{ template "not-found" . }}
+                {{ else }}
+                    {{ if .Data.Short }}
+                        {{ template "shortened-url" .Data }}
+                    {{ else }}
+                        {{ template "url-shortener" .Form }} 
+                    {{ end }}
+                {{ end }}
+            </div>
+            <footer class="flex flex-col items-center justify-center pb-12">
+                <p class="text-sm">Made with ♥ by <a class="underline" href="https://github.com/RodPaDev" target="_blank">RodPaDev</a></p>
+                <p class="text-sm">Powered by <a  class="underline" href="https://htmx.org" target="_blank">htmx</a>, <a  class="underline" href="https://www.tailwindcss.com" target="_blank">tailwindcss</a> and <a class="underline" href="https://go.dev/" target="_blank">golang</a></p>
+            </footer>
+        </main>        
+    </body>
+</html>
+
+{{ end }}
+<!-- Form Template  -->
+{{ block "url-shortener" . }}
+<div class="flex flex-col gap-2" >
+    <form
+        class="flex flex-col gap-2"
+        hx-target="#content"
+        hx-swap="innerHTML transition:true"
+        hx-post="/shorten"
+        hx-on::before-request="validateForm(event)"
+        >
+            <div class="flex gap-2">
+                <input
+                    id="url"
+                    class="border border-black border-3 rounded-md p-4 pl-8 w-full rounded-md outline-none"
+                    {{ if .Values.url }} value="{{ .Values.url }}" {{ end }}
+                    type="text" 
+                    name="url"
+                    placeholder="Paste your long url here"
+                    onkeypress="resetError()"
+                />
+                <button 
+                    class="text-black rounded-md p-2 px-4 border border-black border-3 hover:bg-slate-100"
+                    type="submit"
+                >
+                    Shorten
+                </button>
+            </div>  
+            {{ template "error" . }}
+        </form>
+    <p>Your short link will stay active if it receives at least one visit every 15 days.</p>
+</div>
+{{ end }}
+<!--  -->
+{{ block "shortened-url" . }}
+<div class="flex flex-col gap-2">
+    <div class="flex gap-3">
+        <div class="border border-black border-3 rounded-md w-full rounded-md flex justify-between items-center group">
+            <input class="rounded-md px-4 w-full outline-none" readonly type="text" value="{{ .Short }}"/>
+            <button 
+                class="h-full px-2 border border-black border-y-0 border-r-0 border-l-3 rounded-md hover:bg-slate-100"
+                onclick="navigator.clipboard.writeText('{{ .Short }}')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="43" height="51" viewBox="0 0 43 51" class="fill-current text-white hover:text-slate-100">
+                    <path fill="transparent" d="M0 0h43v51H0z" />
+                    <path
+                        d="M14.86 10c2.65.36 5.54-.39 9.73 0m-9.73 0c2.98.34 5.34-.01 9.73 0m0 0c3.83.23 3.21 2.11 4.86 4.86M24.59 10c4.05 1.36 4.39 3.49 4.86 4.86m0 0c.93 4.24-1.07 8.19 0 16.3m0-16.3c-.29 2.78.47 7.39 0 16.3m0 0c-1.48 3.23-1.89 5.02-4.86 4.86m4.86-4.86c2.24 3.05-1.17 3.72-4.86 4.86m0 0c-3.69.7-7.34-.66-9.73 0m9.73 0c-3.68.37-8.05.29-9.73 0m0 0c-1.74 1.84-6.2-3.14-4.86-4.86m4.86 4.86c-1.88-1.03-2.65-1.66-4.86-4.86m0 0c-1.29-4.26.85-10.61 0-16.3m0 16.3c.1-4.81-.45-9.15 0-16.3m0 0c-1.07-4.78-.02-6.08 4.86-4.86M10 14.86c1.78-2.3 3.21-4.02 4.86-4.86"
+                        stroke="#1e1e1e" stroke-width="2" fill="none" stroke-linecap="round" />
+                    <g stroke-linecap="round">
+                        <path
+                            d="M19.141 15.958c2.93.17 4.36.43 9.73 0 2.4 1.83 2.61 2.79 4.86 4.86.88 4.36-1.93 10.08 0 16.3-3.48 4.66 1.04 8.12-4.86 4.86-3.47.32-3.74 1.13-9.73 0-.54-2.12-4.88-1.15-4.86-4.86 1.16-4.05-2.11-6.03 0-16.3.65.19 3.89-4.53 4.86-4.86"
+                            stroke-width="0" fill="currentColor" />
+                        <path
+                            d="M19.141 15.958c2.11-.06 5.32-.53 9.73 0m-9.73 0c2.03.23 4.62.42 9.73 0m0 0c4.07 1.79 3.91 1 4.86 4.86m-4.86-4.86c1.11.67 4.56 1.39 4.86 4.86m0 0c-.45 3.65.03 9.45 0 16.3m0-16.3c.68 4.29.33 10.02 0 16.3m0 0c.64 1.48.34 4.43-4.86 4.86m4.86-4.86c.55 3.18-.97 3.65-4.86 4.86m0 0c-3.72-.21-6.01.76-9.73 0m9.73 0c-3.18-.14-6.37-.25-9.73 0m0 0c-2.01 1.2-3.4-3.33-4.86-4.86m4.86 4.86c-1.37.87-5.72-.52-4.86-4.86m0 0c-1.63-5.04-.1-9.8 0-16.3m0 16.3c-.22-3.55-.6-8.1 0-16.3m0 0c1.78-3.4-.34-5.01 4.86-4.86m-4.86 4.86c1.74-5.16 3.08-4.81 4.86-4.86"
+                            stroke="#1e1e1e" stroke-width="2" fill="none" />
+                    </g>
+                    <path
+                        d="M18.93 23.268c1.99.07 9.85.15 11.7.03m-10.86-.46c1.98-.05 8.92-.33 10.56-.32M18.09 29.035c2.1-.1 10.18-.42 12.23-.58m-11.3.16c2.05-.03 9.01.51 10.86.49M17.948 33.207c1.89-.22 10.38-.5 12.35-.56m-11.6 1.51c1.78-.15 9.16-.75 11.17-.86M18.233 37.392c1.3-.15 6.88-.62 8.22-.7m-7.73.36c1.27-.13 6.34-.12 7.56-.08"
+                        stroke="#1e1e1e" fill="none" stroke-linecap="round" />
+                </svg>
+        </div>
+        <button class="text-black rounded-md p-2 px-4 border border-black border-3 whitespace-nowrap hover:bg-slate-100">
+           See Total Visits
+        </button>
+    </div>
+    <p>
+        Long Url: <a class="underline" href="{{ .Long }}" target="_blank">{{ .Long }}</a>
+    </p>
+    <a class="cursor-pointer self-center mt-10 underline" hx-target="#content" hx-swap="innerHTML transition:true" hx-get="/another-one" href="/">Shorten Another One</a>
+</div>
+{{ end }}
+
+{{ block "not-found" . }}
+    <div class="flex flex-col gap-4 text-center">
+        <h2 class="text-4xl font-bold" >404 Not Found</h2>
+        <p>Oh well, this is awkward.<br />Here you are, trying to access a page that doesn't exist.</p>
+        <a class="underline mt-8" href="/">Go back to {{ .Title }}</a>
+    </div>
+{{ end }}
+
+{{ block "error" . }}
+    <p
+        id="error" 
+        {{ if .Errors.url }} 
+            class="text-red-500 opacity-100 transition-opacity h-5"
+        {{ else }}
+            class="text-red-500 opacity-0 transition-opacity h-5"
+        {{ end }}  
+    >
+        {{ .Errors.url }}
+    </p>
+{{ end }}

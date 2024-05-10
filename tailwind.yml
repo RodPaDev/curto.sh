@@ -1,0 +1,14 @@
+# This might look egrigous to you but I did for a very rational reason
+# I don't want js files in my project. That's why tailwindcss is configured in a yml file.
+# Why you might ask? Because I decided so.
+# So instead of having a simple and easy life and move on with my day.
+# I decided to write a script in go to convert yml to js by raw-dogging string interpolation.
+# Should you do it? Probably not but can you smell this? It's the smell of freedom and no js.
+
+content:
+    - "./views/**/*.html"
+output:
+    - "./dist/css/tailwind.css"
+theme:
+    extend:
+plugins:
